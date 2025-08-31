@@ -1,0 +1,19 @@
+<h1>Preço Atual - Steam Market</h1>
+
+{% if data %}
+  <p><strong>{{ data.name }}</strong></p>
+  <ul>
+    <li>Menor preço: {{ data.lowest }}</li>
+    <li>Preço mediano: {{ data.median }}</li>
+    <li>Volume: {{ data.volume }}</li>
+  </ul>
+{% else %}
+  <p>Erro ao buscar preço.</p>
+{% endif %}
+
+<script>
+  // Atualiza a cada 10 segundos automaticamente
+  setInterval(() => {
+    location.reload();
+  }, 10000);
+</script>

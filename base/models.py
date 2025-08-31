@@ -1,0 +1,48 @@
+from django.db import models
+
+# Create your models here.
+from django.db import models
+
+class Item(models.Model):
+    classid = models.CharField(max_length=50, unique=True)  # ex: 3186046283
+    market_hash_name = models.CharField(max_length=255, unique=True)
+    type = models.CharField(max_length=100, blank=True, null=True)
+    icon_url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return self.market_hash_name
+    
+
+class Site(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    url = models.URLField()
+
+    def __str__(self):
+        return self.name
+
+class Price(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    price = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+
+
+class Inventory(models.Model):
+    steam_id = models.CharField(max_length=50)  # ex: 7656119...
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Inventory {self.steam_id} @ {self.updated_at}"
+    
+class InventoryItem(models.Model):
+    inventory = models.ForeignKey(Inventory, related_name="items", on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    asset_id = models.CharField(max_length=50)  # ID único dentro da Steam
+    tradable = models.BooleanField(default=False)
+    price_usd = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    float_value = models.FloatField(null=True, blank=True)  # só se disponível
+    wear_name = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.item.market_hash_name} ({self.asset_id})"
