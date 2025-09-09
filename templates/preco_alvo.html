@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+
+{% block title %}Preços Alvo - Skins{% endblock %}
+
+{% block content %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle me-2"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Preços Alvo para Skins</h2>
+        <div class="d-md-none">
+            <form method="get" class="mb-0">
+                <select class="form-select form-select-sm" id="conta" name="conta" onchange="this.form.submit()">
+                    <option value="">-- Escolha uma conta --</option>
+                    {% for conta in contas %}
+                        <option value="{{ conta.id }}" {% if conta_selecionada and conta.id == conta_selecionada.id %}selected{% endif %}>
+                            {{ conta.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    {% if conta_selecionada %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Conta: <span class="text-primary">{{ conta_selecionada.name }}</span></h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#helpModal">
+                    <i class="bi bi-question-circle me-1"></i> Ajuda
+                </button>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Buscar skin por nome...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="filterType">
+                                <option value="all">Todas as skins</option>
+                                <option value="withTarget">Com preço alvo</option>
+                                <option value="withoutTarget">Sem preço alvo</option>
+                            </select>
+                            <button class="btn btn-secondary" id="clearFilters" type="button">Limpar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="skinsTable">
+                        <thead>
+                            <tr>
+                                <th>Skin</th>
+                                <th>Preço Atual</th>
+                                <th>Preço Alvo</th>
+                                <th>Diferença</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in itens %}
+                            <tr
+                                data-has-target="{% if item.preco_alvo %}1{% else %}0{% endif %}"
+                                data-preco="{{ item.preco|default:0|floatformat:2 }}"
+                                data-preco-alvo="{{ item.preco_alvo|default:0|floatformat:2 }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.imagem }}" class="rounded me-2" width="40" height="40" alt="{{ item.nome }}">
+                                        <div>
+                                            <div class="fw-bold">{{ item.nome }}</div>
+                                            <small class="text-muted">Últ. atualização: {% if item.timestamp %}{{ item.timestamp|date:"d/m/Y" }}{% else %}N/A{% endif %}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">${{ item.preco|default:0|floatformat:2 }}</td>
+                                <td>
+                                    {% if item.preco_alvo %}
+                                        <span class="badge bg-info">${{ item.preco_alvo|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Nenhum</span>
+                                    {% endif %}
+                                </td>
+                                <td class="diff-cell"><span class="text-muted">—</span></td>
+                                <td class="status-cell"><span class="badge bg-secondary">Inativo</span></td>
+                                <td>
+                                <button
+                                class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#priceModal"
+                                data-item-id="{{ item.item_pk }}"                          {# id anotado na view #}
+                                data-item-name="{{ item.nome }}"
+                                data-current-price="{{ item.preco|default_if_none:0 }}">   {# sem floatformat e sem $ #}
+                                <i class="bi bi-pencil"></i> Editar
+                                </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Nenhuma skin encontrada.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if itens and itens.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mt-4">
+                        {% if itens.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ itens.previous_page_number }}&conta={{ conta_selecionada.id }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% for i in itens.paginator.page_range %}
+                        <li class="page-item {% if itens.number == i %}active{% endif %}">
+                            <a class="page-link" href="?page={{ i }}&conta={{ conta_selecionada.id }}">{{ i }}</a>
+                        </li>
+                        {% endfor %}
+                        {% if itens.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ itens.next_page_number }}&conta={{ conta_selecionada.id }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-bullseye display-1 text-muted"></i>
+            <h3 class="mt-3 text-muted">Selecione uma conta</h3>
+            <p class="text-muted">Escolha uma conta da lista para gerenciar preços alvo</p>
+        </div>
+    {% endif %}
+
+    <!-- Modal: Definir preço alvo -->
+    <div class="modal fade" id="priceModal" tabindex="-1" aria-labelledby="priceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="priceModalLabel">Definir Preço Alvo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'definir_preco_alvo' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <input type="hidden" name="item_id" id="modalItemId">
+                        {% if conta_selecionada %}
+                        <input type="hidden" name="inventory_id" value="{{ conta_selecionada.id }}">
+                        {% endif %}
+                        <div class="mb-3">
+                            <label class="form-label">Skin</label>
+                            <input type="text" class="form-control" id="modalItemName" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preço Atual</label>
+                            <input type="text" class="form-control" id="modalCurrentPrice" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="targetPrice" class="form-label">Preço Alvo</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" min="0" class="form-control"
+                                    id="targetPrice" name="target_price" required>
+                            </div>
+                            <div class="form-text">Defina o preço que você deseja monitorar</div>
+                            <!-- Novo: label do valor líquido -->
+                            <div id="netPriceLabel" class="mt-2 text-danger fw-bold"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Preço Alvo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Ajuda -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">Como usar Preços Alvo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>O que são Preços Alvo?</h6>
+                    <p>Preços alvo permitem que você defina valores específicos para suas skins e receba alertas quando esses valores forem atingidos.</p>
+                    <h6>Como funciona?</h6>
+                    <ol>
+                        <li>Selecione uma skin da lista</li>
+                        <li>Clique em "Editar" para definir um preço alvo</li>
+                        <li>Salve o preço desejado</li>
+                        <li>O sistema monitorará automaticamente e alertará quando o preço for atingido</li>
+                    </ol>
+                    <h6>Status dos Preços Alvo</h6>
+                    <ul class="list-unstyled">
+                        <li><span class="badge bg-success">Alcançado</span> - Preço atual é igual ou menor que o preço alvo</li>
+                        <li><span class="badge bg-warning">Aguardando</span> - Aguardando o preço atual atingir o preço alvo</li>
+                        <li><span class="badge bg-secondary">Inativo</span> - Nenhum preço alvo definido</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const filterType = document.getElementById('filterType');
+        const clearFilters = document.getElementById('clearFilters');
+        const skinsTable = document.getElementById('skinsTable');
+        const tbody = skinsTable ? skinsTable.querySelector('tbody') : null;
+
+        function toNumber(v){
+            const n = parseFloat(String(v).replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        }
+
+        function updateComputedCells(){
+            if (!tbody) return;
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const preco = toNumber(tr.dataset.preco);
+                const alvo = toNumber(tr.dataset.precoAlvo);
+                const diffCell = tr.querySelector('.diff-cell');
+                const statusCell = tr.querySelector('.status-cell');
+
+                if (!diffCell || !statusCell) return;
+                diffCell.textContent = '';
+                statusCell.textContent = '';
+
+                if (alvo > 0 && preco > 0){
+                    const diff = (preco - alvo);
+                    const diffStr = (diff > 0 ? '+' : '') + '$' + diff.toFixed(2);
+                    diffCell.innerHTML = diff > 0
+                        ? `<span class="text-success">${diffStr}</span>`
+                        : `<span class="text-danger">${diffStr}</span>`;
+
+                    if (preco >= alvo){
+                        statusCell.innerHTML = '<span class="badge bg-success">Alcançado</span>';
+                    } else {
+                        statusCell.innerHTML = '<span class="badge bg-warning">Aguardando</span>';
+                    }
+                } else if (alvo > 0) {
+                    diffCell.innerHTML = '<span class="text-muted">—</span>';
+                    statusCell.innerHTML = '<span class="badge bg-warning">Aguardando</span>';
+                } else {
+                    diffCell.innerHTML = '<span class="text-muted">—</span>';
+                    statusCell.innerHTML = '<span class="badge bg-secondary">Inativo</span>';
+                }
+            });
+        }
+
+        function filterSkins(){
+            if (!tbody) return;
+            const searchText = (searchInput?.value || '').toLowerCase();
+            const filterValue = filterType?.value || 'all';
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const name = tr.querySelector('td')?.textContent.toLowerCase() || '';
+                const hasTarget = tr.dataset.hasTarget === '1';
+                const matchesSearch = name.includes(searchText);
+                let matchesFilter = true;
+                if (filterValue === 'withTarget') matchesFilter = hasTarget;
+                else if (filterValue === 'withoutTarget') matchesFilter = !hasTarget;
+                tr.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+            });
+        }
+
+        searchInput?.addEventListener('input', filterSkins);
+        filterType?.addEventListener('change', filterSkins);
+        clearFilters?.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            if (filterType) filterType.value = 'all';
+            filterSkins();
+        });
+
+        updateComputedCells();
+        filterSkins();
+
+        const priceModal = document.getElementById('priceModal');
+        if (priceModal) {
+        priceModal.addEventListener('show.bs.modal', function (event) {
+            // pega o botão real mesmo se clicou no <i>
+            const trigger = (event.relatedTarget?.closest('[data-item-id]')) || event.relatedTarget;
+
+            const itemId = trigger?.getAttribute('data-item-id') || '';
+            const itemName = trigger?.getAttribute('data-item-name') || '';
+            const raw = (trigger?.getAttribute('data-current-price') || '0').toString().replace(',', '.');
+            const currentPrice = parseFloat(raw);
+
+            document.getElementById('modalItemId').value = itemId;
+            document.getElementById('modalItemName').value = itemName;
+            document.getElementById('modalCurrentPrice').value =
+            '$' + (isNaN(currentPrice) ? 0 : currentPrice).toFixed(2);
+        });
+        }
+
+    });
+
+    priceModal.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('modalItemId').value = '';
+        document.getElementById('modalItemName').value = '';
+        document.getElementById('modalCurrentPrice').value = '';
+        document.getElementById('targetPrice').value = '';
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetPriceInput = document.getElementById('targetPrice');
+        const netPriceLabel = document.getElementById('netPriceLabel');
+
+        if (targetPriceInput) {
+            targetPriceInput.addEventListener('input', function() {
+                const val = parseFloat(this.value);
+                if (!isNaN(val) && val > 0) {
+                    const net = (val * 0.85).toFixed(2); // aplica taxa de 15%
+                    netPriceLabel.textContent = `Você receberá: $${net}`;
+                } else {
+                    netPriceLabel.textContent = '';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -2,11 +2,12 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Inventory, Item, Site, Price
+from .models import Inventory, InventoryItem, Item, Site, Price
 
 admin.site.register(Item)
 admin.site.register(Site)
 admin.site.register(Inventory)
+admin.site.register(InventoryItem)
 
 
 @admin.register(Price)

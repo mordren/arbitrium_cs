@@ -126,11 +126,20 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+import os
+
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")  # usa localhost se não tiver env var
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "America/Sao_Paulo"
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
 MESSAGE_TAGS = {
@@ -145,6 +154,6 @@ MESSAGE_TAGS = {
 CELERY_BEAT_SCHEDULE = {
     "atualizar_precos_todos": {
         "task": "base.tasks.atualizar_precos_todos",  # caminho da task
-        "schedule": crontab(minute="*/30")
+        "schedule": crontab(minute="*/8")
     },
 }

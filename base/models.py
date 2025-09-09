@@ -45,5 +45,20 @@ class InventoryItem(models.Model):
     float_value = models.FloatField(null=True, blank=True)  # só se disponível
     wear_name = models.CharField(max_length=50, blank=True, null=True)
 
+    quantity = models.PositiveIntegerField(default=1)
     def __str__(self):
         return f"{self.item.market_hash_name} ({self.asset_id})"
+    
+
+class PriceAlvo(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE)
+    preco_alvo = models.DecimalField(max_digits=12, decimal_places=2)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('item', 'inventory')
+    
+    def __str__(self):
+        return f"{self.item.market_hash_name} - ${self.preco_alvo} ({self.inventory.name})"
