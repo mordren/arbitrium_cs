@@ -27,13 +27,14 @@ class Price(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
-
 class Inventory(models.Model):
-    steam_id = models.CharField(max_length=50)  # ex: 7656119...
+    name = models.CharField(max_length=100)  # Nome da conta (texto livre)
+    steam_id = models.CharField(max_length=50)  # ID numérico extraído do link
     updated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Inventory {self.steam_id} @ {self.updated_at}"
+        return f"{self.name} ({self.steam_id})"
+    
     
 class InventoryItem(models.Model):
     inventory = models.ForeignKey(Inventory, related_name="items", on_delete=models.CASCADE)
