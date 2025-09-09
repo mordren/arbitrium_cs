@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pdb
+*.egg-info/
+*.egg
+*.log
+
+# Django
+*.sqlite3
+*.db
+*.pot
+*.pyc
+local_settings.py
+db.sqlite3
+
+# Env
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VSCode
+.vscode/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Migrations (opcional, se quiser ignorar elas)
+# **/migrations/
+
+# Compiled static files
+staticfiles/
+static/
+media/
