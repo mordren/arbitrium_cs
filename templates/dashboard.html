@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Skins{% endblock %}
+
+{% block content %}
+    {# Mensagens Django #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle me-2"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {# Cabeçalho e Estatísticas #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Dashboard de Skins</h2>
+
+        {# Seletor de contas para mobile #}
+        <div class="d-md-none">
+            <form method="get" class="mb-0">
+                <select class="form-select form-select-sm" id="conta" name="conta" onchange="this.form.submit()">
+                    <option value="">-- Escolha uma conta --</option>
+                    {% for conta in contas %}
+                        <option value="{{ conta.id }}" {% if conta_selecionada and conta.id == conta_selecionada.id %}selected{% endif %}>
+                            {{ conta.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    {% if conta_selecionada %}
+        {# Cartões de Estatísticas #}
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-subtitle mb-1 text-muted">Total de Itens</h6>
+                                <h4 class="card-title mb-0">{{ itens|length }}</h4>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-collection-play fs-1 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-subtitle mb-1 text-muted">Valor Total</h6>
+                                <h4 class="card-title mb-0">${{ valor_total|default:0|floatformat:2 }}</h4>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-currency-dollar fs-1 text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-subtitle mb-1 text-muted">Item Mais Valioso</h6>
+                                <h4 class="card-title mb-0">
+                                    {% if item_mais_caro %}
+                                        ${{ item_mais_caro.preco|default:0|floatformat:2 }}
+                                    {% else %}
+                                        $0.00
+                                    {% endif %}
+                                </h4>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-award fs-1 text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-subtitle mb-1 text-muted">Atualização</h6>
+                                <h4 class="card-title mb-0">
+                                    {% if last_updates and last_updates.last_update %}
+                                        {{ last_updates.last_update|date:"d/m/Y" }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </h4>
+                                
+                            </div>
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-clock-history fs-1 text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Itens da conta: <span class="text-primary">{{ conta_selecionada.name }}</span></h4>
+
+            <div class="d-flex gap-2">
+                <form method="post" action="{% url 'atualizar_inventario' conta_selecionada.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="bi bi-arrow-repeat me-1"></i> Atualizar inventário
+                    </button>
+                </form>
+
+                <button class="btn btn-outline-secondary">
+                    <i class="bi bi-download me-1"></i> Exportar
+                </button>
+                </form>
+                    
+            </div>
+        </div>
+
+        {% if last_updates and last_updates.last_update %}
+            <p class="text-muted last-update">
+                <i class="bi bi-info-circle me-1"></i> Última atualização dos preços: {{ last_updates.last_update|date:"d/m/Y H:i" }}
+            </p>
+            <h6>Os preços listados aqui, são preços líquidos, já sem os 15% da Steam</h6>
+        {% endif %}
+
+        {# Filtros para desktop #}
+        <div class="row mb-4 d-none d-md-flex">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">Filtrar por:</span>
+                            <select class="form-select form-select-sm me-2" style="width: 150px;">
+                                <option>Todos os itens</option>
+                                <option>Arma</option>
+                                <option>Faca</option>
+                                <option>Luvas</option>
+                            </select>
+
+                            <select class="form-select form-select-sm me-2" style="width: 150px;">
+                                <option>Ordenar por nome</option>
+                                <option>Ordenar por preço (maior)</option>
+                                <option>Ordenar por preço (menor)</option>
+                            </select>
+
+                            <div class="form-check form-switch ms-3">
+                                <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Mostrar apenas negociáveis</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Grid de Itens #}
+        {% if itens %}
+            <div class="row">
+                {% for item in itens %}
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card card-skin h-100">
+                        <img src="{{ item.imagem }}" class="card-img-top skin-image" alt="{{ item.nome }}">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ item.nome }}</h6>
+                             {% if item.quantity and item.quantity > 1 %}
+                                <span class="badge bg-secondary ms-1">x{{ item.quantity }}</span>
+                            {% endif %}
+                            <p class="card-text">
+                                <span class="badge bg-{% if item.preco %}primary{% else %}secondary{% endif %} rounded-pill">
+                                    {% if item.preco %}$ {{ item.preco|floatformat:2 }}{% else %}Sem preço{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="card-footer bg-white pt-0 border-0">
+                            <small class="text-muted last-update">
+                                <i class="bi bi-clock me-1"></i>
+                                {% if item.timestamp %}
+                                    {{ item.timestamp|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    Data não disponível
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">Nenhum item encontrado</h4>
+                <p class="text-muted">Esta conta não possui itens ou o inventário precisa ser atualizado.</p>
+            </div>
+        {% endif %}
+    {% else %}
+        {# Estado inicial quando nenhuma conta é selecionada #}
+        <div class="text-center py-5">
+            <i class="bi bi-person-plus display-1 text-muted"></i>
+            <h3 class="mt-3 text-muted">Selecione uma conta</h3>
+            <p class="text-muted">Escolha uma conta da lista para visualizar seus itens</p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script para destacar itens de alto valor
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card-skin');
+
+        cards.forEach(card => {
+            const badge = card.querySelector('.badge');
+            if (!badge) return;
+            const priceText = badge.textContent || '';
+            if (priceText.includes('$')) {
+                const price = parseFloat(priceText.replace('$', '').replace(',', '.').trim());
+                if (!isNaN(price) && price > 100) {
+                    card.style.borderLeft = '4px solid #20c997';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
